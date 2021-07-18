@@ -69,7 +69,7 @@ void generateDistancesFWA(Map<String, Node> nodeGraph) {
 
 List<int> findShortestPathFWA(List<int> pathList, int start, int end) {
   if (pathList[end] == -1) {
-    print("no path from $start to $end");
+    // print("no path from $start to $end");
     return [];
   } else {
     List<int> path = [end];
@@ -78,7 +78,6 @@ List<int> findShortestPathFWA(List<int> pathList, int start, int end) {
       u = pathList[u];
       path.add(u);
     }
-    print("Path $start -> $end   $path");
     return path.reversed.toList();
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:world_war_waze/WidgetLibrary.dart';
 import "dart:math";
 
 import "Pathfinding.dart";
@@ -52,53 +53,7 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
   // Current computed route to draw
   List<Node> computedRoute = [];
 
-  void clearRoute() {
-    setState(() {
-      this.routeNodeStart = Node.empty();
-      this.routeNodeEnd = Node.empty();
-      this.routeTapStart = Offset.zero;
-      this.routeTapEnd = Offset.zero;
-      this.computedRoute = [];
-      this.routeNodes = [];
-    });
-  }
-
-  ListTile mapSwitchButton(String mapName, String mapUrl, Map<String, Map<String, String>> mapNodes, List<List<int>> pathMatrix) {
-    return ListTile(
-      title: Text(mapName),
-      onTap: () {
-        Navigator.pop(context);
-        clearRoute();
-        setState(() {
-          this.mapUrl = mapUrl;
-          nodesToLoad = mapNodes;
-          this.pathMatrix = pathMatrix;
-        });
-        loadNodesFromFile();
-      },
-    );
-  }
-
-  void loadNodesFromFile() {
-    // Construct Node List from file
-    Map<String, Node> newNodeMap = {};
-    this.nodesToLoad.forEach((node, data) {
-      Map<String, double> connections = {};
-      double nodePtX = double.parse(data["x"] ?? "0") - 8; // To account for the margin offset from the web page
-      double nodePtY = double.parse(data["y"] ?? "0") - 8; // This offset will have to stay until data is redone
-      for (String nextNode in data["nodes"]?.split(",") ?? []) {
-        nextNode = nextNode.trim();
-        if (nextNode.length != 0) {
-          double nextNodePtX = double.parse(nodesToLoad[nextNode]?["x"] ?? "0") - 8;
-          double nextNodePtY = double.parse(nodesToLoad[nextNode]?["y"] ?? "0") - 8;
-          double dist = sqrt(pow(nextNodePtX - nodePtX, 2) + pow(nextNodePtY - nodePtY, 2));
-          connections[nextNode] = dist;
-        }
-      }
-      newNodeMap[node] = Node(node, nodePtX, nodePtY, connections);
-    });
-    setState(() => this.nodeMap = newNodeMap);
-  }
+  String title = "World War Waze - Carentan";
 
   @override
   void initState() {
@@ -110,20 +65,20 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("World War Waze"),
+        title: Text(title),
       ),
       body: Center(
         child: InteractiveViewer(
           child: GestureDetector(
             child: CustomPaint(
               child: Image.network(mapUrl),
-              foregroundPainter: RoutePainter(this.nodeMap, this.routeNodes, this.routeTapStart, this.routeTapEnd, this.computedRoute),
+              foregroundPainter: RoutePainter(nodeMap, routeNodes, routeTapStart, routeTapEnd, computedRoute),
             ),
             onTapUp: (details) {
               // find nearest node
-              Node nearestNode = this.nodeMap.values.first;
+              Node nearestNode = nodeMap.values.first;
               double nearestDistance = 1000;
-              this.nodeMap.forEach((node, data) {
+              nodeMap.forEach((node, data) {
                 double dist = (data.center - details.localPosition).distance;
                 if (dist < nearestDistance) {
                   nearestDistance = dist;
@@ -142,15 +97,8 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
                   }
                 }
                 if (nodeRoute.isEmpty) {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return Dialog(
-                        child: Text("There is no accessible path between these two points."),
-                      );
-                    },
-                  );
-                }
+                  WidgetLibrary.showAlert(context, WidgetLibrary.errorAlert(title: "Route Error", body: "No route between those points."));
+                } else {}
               }
               setState(() {
                 routeNodes.add(nearestNode);
@@ -162,7 +110,6 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
                 }
                 computedRoute.addAll(nodeRoute);
               });
-              //
             },
             // Catch accidental double clicks, but also this is req'd for onDoubleTapDown. Not sure why.
             onDoubleTap: () {},
@@ -174,19 +121,17 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.navigation_outlined),
         onPressed: () {
-          Node startNode = Node.empty();
           if (routeNodes.isEmpty) {
-            print("No start, end, or waypoints");
+            WidgetLibrary.showAlert(context, WidgetLibrary.errorAlert(title: "Route Error", body: "Route needs a start point."));
             return;
-          } else {
-            startNode = routeNodes.first;
-          }
-          if (routeNodes.length <= 1) {
-            print("No end Node");
+          } else if (routeNodes.length <= 1) {
+            WidgetLibrary.showAlert(context, WidgetLibrary.errorAlert(title: "Route Error", body: "Route needs an end point."));
             return;
           }
           List<int> route = [];
-          for (Node endNode in routeNodes) {
+          Node startNode = routeNodes.first;
+          // skip the first node so we don't double up on accident
+          for (Node endNode in routeNodes.getRange(1, routeNodes.length).toList()) {
             int start = int.parse(startNode.id.replaceAll("Node", ""));
             int end = int.parse(endNode.id.replaceAll("Node", ""));
             route.addAll(findShortestPathFWA(this.pathMatrix[start], start, end));
@@ -201,14 +146,7 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
             }
           }
           if (nodeRoute.isEmpty) {
-            showDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return Dialog(
-                  child: Text("There is no accessible path between these two points."),
-                );
-              },
-            );
+            WidgetLibrary.showAlert(context, WidgetLibrary.errorAlert(title: "Route Error", body: "No route between those points."));
             clearRoute();
           }
           setState(() => this.computedRoute = nodeRoute);
@@ -223,13 +161,19 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
             IconButton(
               icon: Icon(Icons.undo_outlined),
               onPressed: () {
-                if (routeNodes.length > 1) {
+                if (routeNodes.length > 2) {
                   setState(() {
                     routeNodes.removeLast();
                     routeTapEnd = routeNodes.last.center;
                     while (computedRoute.isNotEmpty && computedRoute.last != routeNodes.last) {
                       computedRoute.removeLast();
                     }
+                  });
+                } else if (routeNodes.length == 2) {
+                  setState(() {
+                    routeNodes.removeLast();
+                    computedRoute = [];
+                    routeTapEnd = Offset.zero;
                   });
                 } else {
                   clearRoute();
@@ -266,5 +210,54 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
         ),
       ),
     );
+  }
+
+  void clearRoute() {
+    setState(() {
+      this.routeNodeStart = Node.empty();
+      this.routeNodeEnd = Node.empty();
+      this.routeTapStart = Offset.zero;
+      this.routeTapEnd = Offset.zero;
+      this.computedRoute = [];
+      this.routeNodes = [];
+    });
+  }
+
+  ListTile mapSwitchButton(String mapName, String mapUrl, Map<String, Map<String, String>> mapNodes, List<List<int>> pathMatrix) {
+    return ListTile(
+      title: Text(mapName),
+      onTap: () {
+        Navigator.pop(context);
+        clearRoute();
+        setState(() {
+          title = "World War Waze - " + mapName;
+          this.mapUrl = mapUrl;
+          nodesToLoad = mapNodes;
+          this.pathMatrix = pathMatrix;
+        });
+        loadNodesFromFile();
+      },
+    );
+  }
+
+  void loadNodesFromFile() {
+    // Construct Node List from file
+    Map<String, Node> newNodeMap = {};
+    this.nodesToLoad.forEach((node, data) {
+      Map<String, double> connections = {};
+      double nodePtX = double.parse(data["x"] ?? "0") - 8; // To account for the margin offset from the web page
+      double nodePtY = double.parse(data["y"] ?? "0") - 8; // This offset will have to stay until data is redone
+      for (String nextNode in data["nodes"]?.split(",") ?? []) {
+        nextNode = nextNode.trim();
+        if (nextNode.length != 0) {
+          double nextNodePtX = double.parse(nodesToLoad[nextNode]?["x"] ?? "0") - 8;
+          double nextNodePtY = double.parse(nodesToLoad[nextNode]?["y"] ?? "0") - 8;
+          double dist = sqrt(pow(nextNodePtX - nodePtX, 2) + pow(nextNodePtY - nodePtY, 2));
+          connections[nextNode] = dist;
+        }
+      }
+      newNodeMap[node] = Node(node, nodePtX, nodePtY, connections);
+    });
+    setState(() => this.nodeMap = newNodeMap);
   }
 }
