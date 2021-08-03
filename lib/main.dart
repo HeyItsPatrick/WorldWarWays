@@ -11,15 +11,49 @@ import "MapPaths/PathsImport.dart";
 
 void main() => runApp(MyApp());
 
+// theme: ThemeData.from(
+//   colorScheme: ColorScheme(
+//     primary: Color(0xff606c38),
+//     primaryVariant: Color(0xff283618),
+//     background: Colors.grey,
+//     secondary: Color(0xffdda15e),
+//     secondaryVariant: Color(0xffbc6c25),
+//     error: Colors.red,
+//     surface: Colors.purple, //BottomAppBar
+//     brightness: Brightness.light,
+//     onPrimary: Color(0xfffefae0),
+//     onBackground: Colors.black,
+//     onError: Colors.white,
+//     onSecondary: Colors.black,
+//     onSurface: Colors.black,
+//   ),
+// 606c38  283618   fefae0   dda15e   bc6c25
+// https://material.io/resources/color/#!/?view.left=0&view.right=1&primary.color=51603f&secondary.color=dda15e&primary.text.color=ffffff
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "World War Waze",
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
+      title: "World War Ways",
+      theme: ThemeData.from(
+        colorScheme: ColorScheme(
+          primary: Color(0xff606c38),
+          primaryVariant: Color(0xff283618),
+          background: Color(0xfffefae0),
+          secondary: Color(0xffdda15e),
+          secondaryVariant: Color(0xffbc6c25),
+          error: Colors.red,
+          surface: Color(0xfffefae0), //BottomAppBar
+          brightness: Brightness.light,
+          onPrimary: Color(0xfffefae0),
+          onBackground: Colors.black,
+          onError: Colors.white,
+          onSecondary: Colors.black,
+          onSurface: Colors.black,
+        ),
       ),
       home: MapViewer(),
+      debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.light,
     );
   }
 }
@@ -53,7 +87,7 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
   // Current computed route to draw
   List<Node> computedRoute = [];
 
-  String title = "World War Waze - Carentan";
+  String title = "World War Ways - Carentan";
 
   @override
   void initState() {
@@ -193,9 +227,14 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
         child: ListView(
           children: [
             DrawerHeader(
-              child: Text("World War Waze"),
+              child: Center(
+                child: Text("World War Ways"),
+              ),
             ),
-            Text("Maps"),
+            Text(
+              "Maps",
+              textAlign: TextAlign.left,
+            ),
             Divider(),
             mapSwitchButton("Carentan", carentanMapUrl, carentanNodes, carentanPaths),
             mapSwitchButton("Foy", foyMapUrl, foyNodes, foyPaths),
@@ -206,6 +245,9 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
             mapSwitchButton("Saint Mare Eglise", saintMareEgliseMapUrl, saintMareEgliseNodes, saintMareEglisePaths),
             mapSwitchButton("Saint Marie Du Mont", saintMarieDuMontMapUrl, saintMarieDuMontNodes, saintMarieDuMontPaths),
             mapSwitchButton("Utah Beach", utahBeachMapUrl, utahBeachNodes, utahBeachPaths),
+            Divider(),
+            mapSwitchButton("Kursk", kurskMapUrl, kurskNodes, kurskPaths),
+            mapSwitchButton("Stalingrad", stalingradMapUrl, stalingradNodes, stalingradPaths),
           ],
         ),
       ),
@@ -225,12 +267,13 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
 
   ListTile mapSwitchButton(String mapName, String mapUrl, Map<String, Map<String, String>> mapNodes, List<List<int>> pathMatrix) {
     return ListTile(
+      contentPadding: EdgeInsets.fromLTRB(50, 4, 0, 4),
       title: Text(mapName),
       onTap: () {
         Navigator.pop(context);
         clearRoute();
         setState(() {
-          title = "World War Waze - " + mapName;
+          title = "World War Ways - " + mapName;
           this.mapUrl = mapUrl;
           nodesToLoad = mapNodes;
           this.pathMatrix = pathMatrix;
