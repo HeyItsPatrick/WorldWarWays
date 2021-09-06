@@ -65,16 +65,16 @@ class RoutePainter extends CustomPainter {
     */
 
     // this.nodeMap.forEach((node, data) {
-    // canvas.drawRect(Rect.fromLTWH(data.x, data.y, 7, 7), Paint()..color = Colors.red);
-    // data.connections.forEach((id, dist) {
-    //   canvas.drawLine(
-    //       data.center,
-    //       nodeMap[id]!.center,
-    //       Paint()
-    //         ..color = Colors.black
-    //         ..strokeWidth = 5
-    //         ..style = PaintingStyle.stroke);
-    // });
+    //   canvas.drawRect(Rect.fromLTWH(data.x, data.y, 7, 7), Paint()..color = Colors.red);
+    //   data.connections.forEach((id, dist) {
+    //     canvas.drawLine(
+    //         data.center,
+    //         nodeMap[id]!.center,
+    //         Paint()
+    //           ..color = Colors.black
+    //           ..strokeWidth = 5
+    //           ..style = PaintingStyle.stroke);
+    //   });
     // });
     if (this.routeTapStart != Offset.zero) {
       // Draw Start Node
@@ -111,7 +111,7 @@ class RoutePainter extends CustomPainter {
           PointMode.polygon,
           routePts,
           Paint()
-            ..strokeWidth = 3
+            ..strokeWidth = 5
             ..color = Colors.black);
     }
   }

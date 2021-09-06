@@ -318,9 +318,9 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
       routeNodes.add(nearestNode);
       if (routeTapStart == Offset.zero) {
         // No point in showing 2 pins if they are practically right on top of each other. It just clutters the screen
-        routeTapStart = (details.localPosition - nearestNode.center).distance < 10 ? nearestNode.center : details.localPosition;
+        routeTapStart = (details.localPosition - nearestNode.center).distance < 50 ? nearestNode.center : details.localPosition;
       } else {
-        routeTapEnd = (details.localPosition - nearestNode.center).distance < 10 ? nearestNode.center : details.localPosition;
+        routeTapEnd = (details.localPosition - nearestNode.center).distance < 50 ? nearestNode.center : details.localPosition;
       }
       computedRoute.addAll(nodeRoute);
     });
