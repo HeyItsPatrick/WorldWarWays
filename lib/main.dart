@@ -4,10 +4,45 @@ import 'package:flutter/material.dart';
 import 'package:world_war_waze/WidgetLibrary.dart';
 import "dart:math";
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import "Pathfinding.dart";
 import "RoutePainter.dart";
 import "MapNodes/NodeImport.dart";
 import "MapPaths/PathsImport.dart";
+
+/* TERMINAL COMMANDS/STEPS FOR ACTIONS
+-- Build for web
+  flutter build web
+  add `--web-renderer html` if the network images stop showing up
+-- Publish to Surge.sh
+  flutter build web
+  surge
+  Then set the directory to ./build/web in the prompt
+  Publish to worldwarwaze.surge.sh
+-- Publish to Firebase
+  flutter build web
+  firebase deploy
+-- `firebase login` can access the CLI for firebase, without having to use the website all the time
+-- REMINDER
+  In order for Firebase to work, the ./web/index.html needs these lines:
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    <!-- Firebase Configuration -->
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyDC6Vb436DRNglCSeaSQtbY9wx0_UN2Oc8",
+          authDomain: "worldwarways.firebaseapp.com",
+          projectId: "worldwarways",
+          storageBucket: "worldwarways.appspot.com",
+          messagingSenderId: "927538788359",
+          appId: "1:927538788359:web:62c03a536bcb568b7152a2"
+        };
+
+      // Initialize Firebase
+      firebase.initializeApp(firebaseConfig);
+    </script>
+*/
 
 void main() => runApp(MyApp());
 
@@ -29,6 +64,8 @@ void main() => runApp(MyApp());
 //   ),
 // 606c38  283618   fefae0   dda15e   bc6c25
 // https://material.io/resources/color/#!/?view.left=0&view.right=1&primary.color=51603f&secondary.color=dda15e&primary.text.color=ffffff
+
+//https://medium.com/flutter-community/flutter-crud-operations-using-firebase-cloud-firestore-a7ef38bbf027
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -38,7 +75,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme(
           primary: Color(0xff606c38),
           primaryVariant: Color(0xff283618),
-          background: Color(0xfffefae0),
+          background: Colors.grey.shade400,
           secondary: Color(0xffdda15e),
           secondaryVariant: Color(0xffbc6c25),
           error: Colors.red,
@@ -92,6 +129,7 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    FirebaseFirestore.instance.collection("mapData").doc("mapVisits").update({"carentan": FieldValue.increment(1)}).then((value) {});
     loadNodesFromFile();
   }
 
@@ -103,53 +141,18 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
       ),
       body: Center(
         child: InteractiveViewer(
+          maxScale: 8.0,
+          minScale: 0.25,
+          constrained: false,
           child: GestureDetector(
             child: CustomPaint(
               child: Image.network(mapUrl),
               foregroundPainter: RoutePainter(nodeMap, routeNodes, routeTapStart, routeTapEnd, computedRoute),
             ),
-            onTapUp: (details) {
-              // find nearest node
-              Node nearestNode = nodeMap.values.first;
-              double nearestDistance = 1000;
-              nodeMap.forEach((node, data) {
-                double dist = (data.center - details.localPosition).distance;
-                if (dist < nearestDistance) {
-                  nearestDistance = dist;
-                  nearestNode = data;
-                }
-              });
-              List<Node> nodeRoute = [];
-              if (computedRoute.isNotEmpty) {
-                int start = int.parse(routeNodes.last.id.replaceAll("Node", ""));
-                int end = int.parse(nearestNode.id.replaceAll("Node", ""));
-                // Translate the returned route of indices to Nodes
-                for (int index in findShortestPathFWA(this.pathMatrix[start], start, end)) {
-                  String nodeID = "Node" + index.toString();
-                  if (nodeMap[nodeID] != null) {
-                    nodeRoute.add(nodeMap[nodeID]!);
-                  }
-                }
-                if (nodeRoute.isEmpty) {
-                  WidgetLibrary.showAlert(context, WidgetLibrary.errorAlert(title: "Route Error", body: "No route between those points."));
-                } else {}
-              }
-              setState(() {
-                routeNodes.add(nearestNode);
-                if (routeTapStart == Offset.zero) {
-                  // No point in showing 2 pins if they are practically right on top of each other. It just clutters the screen
-                  routeTapStart = (details.localPosition - nearestNode.center).distance < 10 ? nearestNode.center : details.localPosition;
-                } else {
-                  routeTapEnd = (details.localPosition - nearestNode.center).distance < 10 ? nearestNode.center : details.localPosition;
-                }
-                computedRoute.addAll(nodeRoute);
-              });
-            },
+            onTapUp: onTap,
             // Catch accidental double clicks, but also this is req'd for onDoubleTapDown. Not sure why.
             onDoubleTap: () {},
           ),
-          constrained: false,
-          minScale: 0.01,
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -165,10 +168,25 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
           List<int> route = [];
           Node startNode = routeNodes.first;
           // skip the first node so we don't double up on accident
-          for (Node endNode in routeNodes.getRange(1, routeNodes.length).toList()) {
+          for (Node endNode in routeNodes.skip(1)) {
             int start = int.parse(startNode.id.replaceAll("Node", ""));
             int end = int.parse(endNode.id.replaceAll("Node", ""));
-            route.addAll(findShortestPathFWA(this.pathMatrix[start], start, end));
+            List<int> path = findShortestPathFWA(this.pathMatrix[start], start, end);
+            if (path.isNotEmpty) {
+              route.addAll(path);
+            } else {
+              // Move the ends for the path line drawing
+              this.routeNodeEnd = routeNodes[routeNodes.indexOf(endNode) - 1];
+              this.routeTapEnd = routeNodes[routeNodes.indexOf(endNode) - 1].center;
+              // Remove nodes from routeNodes so any further waypoints aren't left on the map
+              routeNodes.removeRange(routeNodes.indexOf(endNode), routeNodes.length);
+              if (route.isNotEmpty) {
+                WidgetLibrary.showAlert(context, WidgetLibrary.errorAlert(title: "Route Error", body: "No route beyond this point."));
+              }
+              break;
+            }
+            addRouteDataToFirestore(int.parse(startNode.id.replaceAll("Node", "")), int.parse(endNode.id.replaceAll("Node", "")));
+            // Do this to stitch together waypoint to waypoint paths without doubling up at the overlap
             startNode = endNode;
           }
           List<Node> nodeRoute = [];
@@ -186,7 +204,7 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
           setState(() => this.computedRoute = nodeRoute);
         },
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         shape: CircularNotchedRectangle(),
         child: Row(
@@ -228,14 +246,27 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
           children: [
             DrawerHeader(
               child: Center(
-                child: Text("World War Ways"),
+                child: Text(
+                  "World War Ways",
+                  textScaleFactor: 2,
+                ),
               ),
             ),
-            Text(
-              "Maps",
-              textAlign: TextAlign.left,
+            Padding(
+              padding: EdgeInsets.only(left: 25),
+              child: Text(
+                "Maps",
+                textAlign: TextAlign.left,
+                textScaleFactor: 1.5,
+              ),
             ),
-            Divider(),
+            Divider(
+              color: Colors.grey,
+              height: 10,
+              thickness: 2,
+              indent: 0,
+              endIndent: 0,
+            ),
             mapSwitchButton("Carentan", carentanMapUrl, carentanNodes, carentanPaths),
             mapSwitchButton("Foy", foyMapUrl, foyNodes, foyPaths),
             mapSwitchButton("Hill 400", hill400MapUrl, hill400Nodes, hill400Paths),
@@ -254,6 +285,47 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
     );
   }
 
+  void onTap(TapUpDetails details) {
+    // find nearest node
+    Node nearestNode = nodeMap.values.first;
+    double nearestDistance = double.infinity;
+    nodeMap.forEach((node, data) {
+      double dist = (data.center - details.localPosition).distance;
+      if (dist < nearestDistance) {
+        nearestDistance = dist;
+        nearestNode = data;
+      }
+    });
+    List<Node> nodeRoute = [];
+    // If there's an active route, do live updates
+    if (computedRoute.isNotEmpty) {
+      int start = int.parse(routeNodes.last.id.replaceAll("Node", ""));
+      int end = int.parse(nearestNode.id.replaceAll("Node", ""));
+      // Translate the returned route of indices to Nodes
+      for (int index in findShortestPathFWA(this.pathMatrix[start], start, end).skip(1)) {
+        String nodeID = "Node" + index.toString();
+        if (nodeMap[nodeID] != null) {
+          nodeRoute.add(nodeMap[nodeID]!);
+        }
+      }
+      if (nodeRoute.isEmpty) {
+        WidgetLibrary.showAlert(context, WidgetLibrary.errorAlert(title: "Route Error", body: "No route between those points."));
+        return;
+      }
+      addRouteDataToFirestore(start, end);
+    }
+    setState(() {
+      routeNodes.add(nearestNode);
+      if (routeTapStart == Offset.zero) {
+        // No point in showing 2 pins if they are practically right on top of each other. It just clutters the screen
+        routeTapStart = (details.localPosition - nearestNode.center).distance < 10 ? nearestNode.center : details.localPosition;
+      } else {
+        routeTapEnd = (details.localPosition - nearestNode.center).distance < 10 ? nearestNode.center : details.localPosition;
+      }
+      computedRoute.addAll(nodeRoute);
+    });
+  }
+
   void clearRoute() {
     setState(() {
       this.routeNodeStart = Node.empty();
@@ -270,6 +342,10 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
       contentPadding: EdgeInsets.fromLTRB(50, 4, 0, 4),
       title: Text(mapName),
       onTap: () {
+        FirebaseFirestore.instance
+            .collection("mapData")
+            .doc("mapVisits")
+            .update({"${mapName[0].toLowerCase()}${mapName.substring(1).replaceAll(' ', '')}": FieldValue.increment(1)}).then((value) {});
         Navigator.pop(context);
         clearRoute();
         setState(() {
@@ -281,6 +357,12 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
         loadNodesFromFile();
       },
     );
+  }
+
+  void addRouteDataToFirestore(int start, int end) {
+    String mapName = this.title.replaceAll("World War Ways - ", "").replaceAll(' ', '');
+    mapName = "${mapName[0].toLowerCase()}${mapName.substring(1)}RouteCount";
+    FirebaseFirestore.instance.collection("mapData").doc(mapName).update({"$start->$end": FieldValue.increment(1)});
   }
 
   void loadNodesFromFile() {
