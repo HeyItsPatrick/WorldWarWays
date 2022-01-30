@@ -1,10 +1,9 @@
-import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:world_war_waze/WidgetLibrary.dart';
 import "dart:math";
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import "Pathfinding.dart";
 import "RoutePainter.dart";
@@ -279,6 +278,33 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
             Divider(),
             mapSwitchButton("Kursk", kurskMapUrl, kurskNodes, kurskPaths),
             mapSwitchButton("Stalingrad", stalingradMapUrl, stalingradNodes, stalingradPaths),
+            Divider(
+              color: Colors.grey,
+              height: 10,
+              thickness: 2,
+              indent: 0,
+              endIndent: 0,
+            ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Text(
+                    "Join my Discord server to message me with any questions, comments, or bugs!",
+                    textAlign: TextAlign.center,
+                    textScaleFactor: 1.5,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => launch("https://discord.gg/zB7SBRbPMS"),
+                  icon: Image.asset(
+                    "Discord-Logo-Color.png",
+                  ),
+                  iconSize: 60.0,
+                ),
+              ],
+            )
           ],
         ),
       ),
