@@ -298,9 +298,7 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
                 ),
                 IconButton(
                   onPressed: () => launch("https://discord.gg/zB7SBRbPMS"),
-                  icon: Image.asset(
-                    "Discord-Logo-Color.png",
-                  ),
+                  icon: Icon(Icons.bug_report),
                   iconSize: 60.0,
                 ),
               ],
