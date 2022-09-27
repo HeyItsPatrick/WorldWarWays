@@ -1,6 +1,5 @@
-String saintMareEgliseMapUrl =
-    "https://cdn.discordapp.com/attachments/645036946976145409/738895042797764618/SME_TacMap01.jpg";
-var saintMareEgliseNodes = {
+String sainteMereEgliseMapUrl = "https://cdn.discordapp.com/attachments/645036946976145409/738895042797764618/SME_TacMap01.jpg";
+var sainteMereEgliseNodes = {
   "Node0": {"x": "46", "y": "645", "nodes": ", Node1"},
   "Node1": {"x": "70", "y": "651", "nodes": ", Node0, Node2"},
   "Node2": {"x": "133", "y": "669", "nodes": ", Node1, Node3"},

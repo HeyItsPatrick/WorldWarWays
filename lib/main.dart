@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:world_war_waze/WidgetLibrary.dart';
 import "dart:math";
@@ -272,8 +273,9 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
             mapSwitchButton("Hurtgen Forest", hurtgenForestMapUrl, hurtgenForestNodes, hurtgenForestPaths),
             mapSwitchButton("Omaha Beach", omahaBeachMapUrl, omahaBeachNodes, omahaBeachPaths),
             mapSwitchButton("Purple Heart Lane", purpleHeartLaneMapUrl, purpleHeartLaneNodes, purpleHeartLanePaths),
-            mapSwitchButton("Saint Mare Eglise", saintMareEgliseMapUrl, saintMareEgliseNodes, saintMareEglisePaths),
-            mapSwitchButton("Saint Marie Du Mont", saintMarieDuMontMapUrl, saintMarieDuMontNodes, saintMarieDuMontPaths),
+            mapSwitchButton("Remagen", remagenMapUrl, remagenNodes, remagenPaths),
+            mapSwitchButton("Sainte Mere Eglise", sainteMereEgliseMapUrl, sainteMereEgliseNodes, sainteMereEglisePaths),
+            mapSwitchButton("Sainte Marie Du Mont", sainteMarieDuMontMapUrl, sainteMarieDuMontNodes, sainteMarieDuMontPaths),
             mapSwitchButton("Utah Beach", utahBeachMapUrl, utahBeachNodes, utahBeachPaths),
             Divider(),
             mapSwitchButton("Kursk", kurskMapUrl, kurskNodes, kurskPaths),
@@ -387,6 +389,22 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
     String mapName = this.title.replaceAll("World War Ways - ", "").replaceAll(' ', '');
     mapName = "${mapName[0].toLowerCase()}${mapName.substring(1)}RouteCount";
     FirebaseFirestore.instance.collection("mapData").doc(mapName).update({"$start->$end": FieldValue.increment(1)});
+  }
+
+  void deleteAllFirestore() {
+    // this will delete all the docs. Write a different function if we just want to clear the data, which should probably be done by me with some regularity
+    // after a time, it will lag out or fail all attempts to query it
+    FirebaseFirestore.instance.collection("mapData").doc("carentanRouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("foyRouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("hill400RouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("utahBeachRouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("hurtgenForestRouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("kurskRouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("omahaBeachRouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("purpleHeartLaneRouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("saintMareEgliseRouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("saintMarieDuMontRouteCount").delete();
+    FirebaseFirestore.instance.collection("mapData").doc("stalingradRouteCount").delete();
   }
 
   void loadNodesFromFile() {
