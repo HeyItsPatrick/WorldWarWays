@@ -24,27 +24,12 @@ import "MapPaths/PathsImport.dart";
   flutter build web
   firebase deploy
 -- `firebase login` can access the CLI for firebase, without having to use the website all the time
--- REMINDER
-  In order for Firebase to work, the ./web/index.html needs these lines:
-    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
-    <!-- Firebase Configuration -->
-    <script>
-        const firebaseConfig = {
-          apiKey: "AIzaSyDC6Vb436DRNglCSeaSQtbY9wx0_UN2Oc8",
-          authDomain: "worldwarways.firebaseapp.com",
-          projectId: "worldwarways",
-          storageBucket: "worldwarways.appspot.com",
-          messagingSenderId: "927538788359",
-          appId: "1:927538788359:web:62c03a536bcb568b7152a2"
-        };
-
-      // Initialize Firebase
-      firebase.initializeApp(firebaseConfig);
-    </script>
 */
 
-void main() => runApp(MyApp());
+void main() async {
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
 
 // theme: ThemeData.from(
 //   colorScheme: ColorScheme(
@@ -129,7 +114,7 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    FirebaseFirestore.instance.collection("mapData").doc("mapVisits").update({"carentan": FieldValue.increment(1)}).then((value) {});
+    // FirebaseFirestore.instance.collection("mapData").doc("mapVisits").update({"carentan": FieldValue.increment(1)}).then((value) {});
     loadNodesFromFile();
   }
 
@@ -290,18 +275,29 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Text(
-                    "Join my Discord server to message me with any questions, comments, or bugs!",
-                    textAlign: TextAlign.center,
-                    textScaleFactor: 1.5,
-                  ),
+                Text(
+                  "Thank you all for your support!",
+                  textAlign: TextAlign.center,
                 ),
+                Text(
+                    "This project is not currently being actively developed, but you're welcome to check out Maps Let Loose for more updated maps and tools!",
+                    textAlign: TextAlign.center),
+                Text(
+                  "https://mattw.io/maps-let-loose/",
+                  textAlign: TextAlign.center,
+                ),
+                Text("If you want to message me or catch any possible future updates, click the icon below to join the Discord!",
+                    textAlign: TextAlign.center),
                 IconButton(
                   onPressed: () => launch("https://discord.gg/zB7SBRbPMS"),
-                  icon: Icon(Icons.bug_report),
-                  iconSize: 60.0,
+                  icon: Icon(Icons.info),
+                  iconSize: 50.0,
+                ),
+                Text("Application source code:"),
+                IconButton(
+                  onPressed: () => launch("https://github.com/HeyItsPatrick/WorldWarWays"),
+                  icon: Icon(Icons.code),
+                  iconSize: 50.0,
                 ),
               ],
             )
@@ -368,10 +364,10 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
       contentPadding: EdgeInsets.fromLTRB(50, 4, 0, 4),
       title: Text(mapName),
       onTap: () {
-        FirebaseFirestore.instance
-            .collection("mapData")
-            .doc("mapVisits")
-            .update({"${mapName[0].toLowerCase()}${mapName.substring(1).replaceAll(' ', '')}": FieldValue.increment(1)}).then((value) {});
+        // FirebaseFirestore.instance
+        //     .collection("mapData")
+        //     .doc("mapVisits")
+        //     .update({"${mapName[0].toLowerCase()}${mapName.substring(1).replaceAll(' ', '')}": FieldValue.increment(1)}).then((value) {});
         Navigator.pop(context);
         clearRoute();
         setState(() {
@@ -388,7 +384,7 @@ class _MapViewerState extends State<MapViewer> with WidgetsBindingObserver {
   void addRouteDataToFirestore(int start, int end) {
     String mapName = this.title.replaceAll("World War Ways - ", "").replaceAll(' ', '');
     mapName = "${mapName[0].toLowerCase()}${mapName.substring(1)}RouteCount";
-    FirebaseFirestore.instance.collection("mapData").doc(mapName).update({"$start->$end": FieldValue.increment(1)});
+    // FirebaseFirestore.instance.collection("mapData").doc(mapName).update({"$start->$end": FieldValue.increment(1)});
   }
 
   void deleteAllFirestore() {

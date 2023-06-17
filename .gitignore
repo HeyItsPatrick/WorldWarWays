@@ -3,7 +3,8 @@
 /android
 /ios
 /web
-/lib/MapDistances
+/assets
+/.firebase
 
 # Miscellaneous
 *.class

@@ -13,3 +13,5 @@ WWW has an easy to use point and click interface, which allows users to create s
 - Open the sidebar with the button in the top left to choose any current map, or to access my Discord server for any feedback or questions
 
 The latest version of this is available for use at https://worldwarways.web.app/
+
+You can also find the tool I built to generate the paths here: https://github.com/HeyItsPatrick/WorldWarWaysNodeMaker
